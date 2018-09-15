@@ -64,6 +64,7 @@ namespace ns3{
     RsuApp::SetPeersAddresses(const std::vector<Ipv4Address> &peers)
     {
         NS_LOG_FUNCTION(this);
+        NS_LOG_INFO("Set peersAddresses");
         m_peersAddresses = peers;
         m_numberOfPeers = m_peersAddresses.size();
     }
@@ -116,12 +117,21 @@ namespace ns3{
             MakeCallback (&RsuApp::HandlePeerClose, this),
             MakeCallback (&RsuApp::HandlePeerError, this));
 
-        for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end() ; ++i)
+        if(m_peersAddresses.size() == 0)
         {
-            m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
-            m_peersSockets[*i]->Connect(*i);
+            NS_LOG_INFO("No peer");
+        }
+        else
+        {
+            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end() ; ++i)
+            {
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " connect peer:" << *i);
+                m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
+                m_peersSockets[*i]->Connect(*i);
+            }
         }
 
+        
         ScheduleNextAuction();
         
     } 
@@ -159,18 +169,25 @@ namespace ns3{
 
         m_txTrace(packet);
 
-        m_socket->Bind();
-        m_socket->Connect(m_local);
-        m_socket->Send(packet);
 
         if(msgType == 1)
         {
-            //wait
+            //InetSocketAddress broad = InetSocketAddress(Ipv4Address("10.1.1.2"));
+            m_socket->Bind();
+            m_socket->Connect(m_local);
+            m_socket->Send(packet);
+
             NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
                 << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
+            
         }
         else if(msgType == 3)
         {
+            
+            m_socket->Bind();
+            m_socket->Connect(m_local);
+            m_socket->Send(packet);
+
             NS_LOG_INFO("Node " << GetNode()->GetId() << " send RESULT to "
                 << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
         }
