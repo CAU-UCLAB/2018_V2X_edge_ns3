@@ -12,8 +12,8 @@ namespace ns3{
         static TypeId tid = TypeId("ns3::RsuApp")
             .SetParent<Application>()
             .AddConstructor<RsuApp>()
-            .AddAttribute("Mode", "The mode: Sender(True), Receiver(false)",
-                BooleanValue(false), MakeBooleanAccessor(&RsuApp::m_mode),
+            .AddAttribute("Mode", "The mode: Normal(True), Multi-hop(false)",
+                BooleanValue(true), MakeBooleanAccessor(&RsuApp::m_mode),
                 MakeBooleanChecker())
             .AddAttribute("Local", "The address on which to bind the rx socket",
                 AddressValue(),
@@ -79,7 +79,7 @@ namespace ns3{
     {
         NS_LOG_FUNCTION(this);
 
-        NS_LOG_INFO("Node " << GetNode()->GetId() <<"peers are");
+        NS_LOG_INFO("Node " << GetNode()->GetId() <<" peers are");
         for(auto it = m_peersAddresses.begin(); it != m_peersAddresses.end(); it++)
         {
             NS_LOG_INFO("\t" << *it);
@@ -87,8 +87,10 @@ namespace ns3{
        
         TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
         if(!m_socket)
-        {
+        {   
+            NS_LOG_INFO("Node " << GetNode()->GetId() << " Create Socket");
             m_socket = Socket::CreateSocket(GetNode(), tid);
+            m_socket->SetAllowBroadcast(true);
             m_socket->Bind(m_local);
             m_socket->Listen();
             m_socket->ShutdownSend();
@@ -119,6 +121,8 @@ namespace ns3{
             m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
             m_peersSockets[*i]->Connect(*i);
         }
+
+        ScheduleNextAuction();
         
     } 
 
@@ -130,9 +134,16 @@ namespace ns3{
         if(m_sendEvent.IsRunning()){
             Simulator::Cancel(m_sendEvent);
         }
+
+        for(std::vector<Ipv4Address>::iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
+        {
+            m_peersSockets[*i]->Close();
+        }
+
         if(m_socket)
         {
             m_socket->Close();
+            m_socket->SetRecvCallback(MakeNullCallback<void, Ptr<Socket>>());
         }
 
     }
@@ -148,29 +159,37 @@ namespace ns3{
 
         m_txTrace(packet);
 
+        m_socket->Bind();
+        m_socket->Connect(m_local);
         m_socket->Send(packet);
 
         if(msgType == 1)
         {
             //wait
+            NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
         }
         else if(msgType == 3)
         {
-            ScheduleNextAuction();
+            NS_LOG_INFO("Node " << GetNode()->GetId() << " send RESULT to "
+                << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
         }
         
+        ScheduleNextAuction();
     }
 
     void 
     RsuApp::ScheduleNextAuction(void)
     {
-        Time tNext (Seconds(5.0));
+        NS_LOG_FUNCTION(this);
+        Time tNext (Seconds(3.0));
         m_sendEvent = Simulator::Schedule(tNext, &RsuApp::SendPacket, this, 1);
     }
 
     void 
     RsuApp::HandleRead (Ptr<Socket> socket)
     {
+        NS_LOG_FUNCTION(this);
         Ptr<Packet> packet;
         Address from;
         RsuHeader rHeader;
@@ -178,13 +197,17 @@ namespace ns3{
 
         while((packet = m_socket->RecvFrom(from))){
             
+            NS_LOG_INFO("At time" << Simulator::Now().GetSeconds()
+                <<"s packet received" << packet->GetSize()
+                << "bytes from" << InetSocketAddress::ConvertFrom(from).GetIpv4());
             packet->RemoveHeader(rHeader);
             msgType = rHeader.GetMessageType();
+            m_rxTrace(packet);
             if(msgType == 2)
             {
                 //Wait and do Auction
-                NS_LOG_INFO("Receive AUC_RELPY")
-                m_txTrace(pakcet);
+                NS_LOG_INFO("Receive AUC_RELPY");
+                //m_rxTrace(packet);
             }
             else
             {

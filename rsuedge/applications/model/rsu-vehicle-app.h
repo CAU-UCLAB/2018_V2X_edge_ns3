@@ -24,15 +24,20 @@ namespace ns3{
             void SendPacket (uint64_t msgType);
             void ScheduleTx (void);
             void HandleRead (Ptr<Socket> socket);
+            void HandleAccept (Ptr<Socket> socket, const Address& from);
+            void HandlePeerClose (Ptr<Socket> socket);
+            void HandlePeerError (Ptr<Socket> socket);
 
             bool        m_mode;         //Normal : True, Edge : False
-            Address     m_address;
+            Address     m_local;
             DataRate    m_dataRate;
             Ptr<Socket> m_socket;
-            uint32_t    m_pakcetSize;
+            uint32_t    m_packetSize;
             uint32_t    m_packetSent;
             EventId     m_sendEvent;
 
+            TracedCallback<Ptr<const Packet>> m_txTrace;
+            TracedCallback<Ptr<const Packet>> m_rxTrace;
     };
 }
 
