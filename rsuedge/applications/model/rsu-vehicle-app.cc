@@ -47,19 +47,32 @@ namespace ns3{
     {
         NS_LOG_FUNCTION(this);
     }
+    void
+    RsuVehicleApp::SetPeersAddresses(const std::vector<Ipv4Address> &peers)
+    {
+        NS_LOG_FUNCTION(this);
+        NS_LOG_INFO("peers size: " << peers.size());
+        m_peersAddresses = peers;
+        m_numberOfPeers = m_peersAddresses.size();
+        NS_LOG_INFO("Set peersAddresses (size: " <<  m_peersAddresses.size() << ")" );
+
+    }
 
     void
     RsuVehicleApp::StartApplication (void)
     {
         NS_LOG_FUNCTION(this);
 
-        NS_LOG_INFO("Node " << GetNode()->GetId());
-        NS_LOG_INFO("m_local : " << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
-    
+        NS_LOG_INFO("Node " << GetNode()->GetId() <<" peers are");
+        for(auto it = m_peersAddresses.begin(); it != m_peersAddresses.end(); it++)
+        {
+            NS_LOG_INFO("\t" << *it);
+        }
+
+        TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
         if(!m_socket)
         {
             NS_LOG_INFO("Node " << GetNode()->GetId() << " Create Socket");
-            TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
             m_socket = Socket::CreateSocket(GetNode(), tid);
             m_socket->SetAllowBroadcast(true);
             m_socket->Bind(m_local);
@@ -80,12 +93,29 @@ namespace ns3{
         }
         
         m_socket->SetRecvCallback(MakeCallback(&RsuVehicleApp::HandleRead, this));
+        
         m_socket->SetAcceptCallback(
             MakeNullCallback<bool, Ptr<Socket>, const Address &>(),
             MakeCallback (&RsuVehicleApp::HandleAccept, this));
         m_socket->SetCloseCallbacks(
             MakeCallback (&RsuVehicleApp::HandlePeerClose, this),
             MakeCallback (&RsuVehicleApp::HandlePeerError, this));
+        
+
+        if(m_peersAddresses.size() == 0)
+        {
+            NS_LOG_INFO("No peer");
+        }
+        else
+        {
+            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end() ; ++i)
+            {
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " connect peer:" << *i);
+                m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
+                m_peersSockets[*i]->Connect(InetSocketAddress(*i, 8080));
+            }
+        }
+        
     }
 
     void
@@ -109,10 +139,24 @@ namespace ns3{
         rHeader.SetMessageType(msgType);
         packet->AddHeader(rHeader);
         m_txTrace(packet);
-        m_socket->Send(packet);
-
-        NS_LOG_INFO("Node " << GetNode()->GetId() << " send REPLY to"
-        << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
+        
+        if(msgType == 2)
+        {
+            //InetSocketAddress broad = InetSocketAddress(Ipv4Address("10.1.1.2"));
+            /*
+            m_socket->Bind();
+            m_socket->Connect(m_local);
+            m_socket->Send(packet);
+            */
+            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
+            {
+                m_peersSockets[*i]->Send(packet);
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                << *i);
+            }
+            
+            
+        }
 
     }
 
@@ -131,7 +175,7 @@ namespace ns3{
         RsuHeader rHeader;
         uint64_t msgType;
 
-        while((packet = m_socket->RecvFrom(from))){
+        while((packet = socket->RecvFrom(from))){
             
             NS_LOG_INFO("At time" << Simulator::Now().GetSeconds()
                 <<"s packet received" << packet->GetSize()

@@ -3,6 +3,7 @@
 
 namespace ns3 {
 
+    NS_LOG_COMPONENT_DEFINE("RsuAppHelper");
     RsuAppHelper::RsuAppHelper (bool mode, Address local)
     {
         m_factory.SetTypeId("ns3::RsuApp");
@@ -18,6 +19,7 @@ namespace ns3 {
     void 
     RsuAppHelper::SetPeersAddresses(std::vector<Ipv4Address> &peersAddresses)
     {
+        NS_LOG_INFO("peer size:" << peersAddresses.size());
         m_peersAddresses = peersAddresses;
     }
 

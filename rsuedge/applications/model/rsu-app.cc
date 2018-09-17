@@ -64,9 +64,11 @@ namespace ns3{
     RsuApp::SetPeersAddresses(const std::vector<Ipv4Address> &peers)
     {
         NS_LOG_FUNCTION(this);
-        NS_LOG_INFO("Set peersAddresses");
+        NS_LOG_INFO("peers size: " << peers.size());
         m_peersAddresses = peers;
         m_numberOfPeers = m_peersAddresses.size();
+        NS_LOG_INFO("Set peersAddresses (size: " <<  m_peersAddresses.size() << ")" );
+
     }
 
     void
@@ -127,7 +129,7 @@ namespace ns3{
             {
                 NS_LOG_INFO("Node " << GetNode()->GetId() << " connect peer:" << *i);
                 m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
-                m_peersSockets[*i]->Connect(*i);
+                m_peersSockets[*i]->Connect(InetSocketAddress(*i, 8080));
             }
         }
 
@@ -166,6 +168,7 @@ namespace ns3{
         RsuHeader rHeader;
         rHeader.SetMessageType(msgType);
         packet->AddHeader(rHeader);
+        //rHeader.Print(std::cout);
 
         m_txTrace(packet);
 
@@ -173,20 +176,29 @@ namespace ns3{
         if(msgType == 1)
         {
             //InetSocketAddress broad = InetSocketAddress(Ipv4Address("10.1.1.2"));
+            /*
             m_socket->Bind();
             m_socket->Connect(m_local);
             m_socket->Send(packet);
-
-            NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
-                << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
+            */
+            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
+            {
+                m_peersSockets[*i]->Send(packet);
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                << *i);
+            }
+            
             
         }
         else if(msgType == 3)
         {
             
-            m_socket->Bind();
-            m_socket->Connect(m_local);
-            m_socket->Send(packet);
+           for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
+            {
+                m_peersSockets[*i]->Send(packet);
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                << *i);
+            }
 
             NS_LOG_INFO("Node " << GetNode()->GetId() << " send RESULT to "
                 << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
@@ -199,7 +211,7 @@ namespace ns3{
     RsuApp::ScheduleNextAuction(void)
     {
         NS_LOG_FUNCTION(this);
-        Time tNext (Seconds(3.0));
+        Time tNext (Seconds(2.5));
         m_sendEvent = Simulator::Schedule(tNext, &RsuApp::SendPacket, this, 1);
     }
 
@@ -212,7 +224,7 @@ namespace ns3{
         RsuHeader rHeader;
         uint64_t msgType;
 
-        while((packet = m_socket->RecvFrom(from))){
+        while((packet = socket->RecvFrom(from))){
             
             NS_LOG_INFO("At time" << Simulator::Now().GetSeconds()
                 <<"s packet received" << packet->GetSize()
