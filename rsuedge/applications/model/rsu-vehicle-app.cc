@@ -151,7 +151,7 @@ namespace ns3{
             for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
             {
                 m_peersSockets[*i]->Send(packet);
-                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " send AUC_REPLY to " 
                 << *i);
             }
             
@@ -177,7 +177,8 @@ namespace ns3{
 
         while((packet = socket->RecvFrom(from))){
             
-            NS_LOG_INFO("At time" << Simulator::Now().GetSeconds()
+            NS_LOG_INFO("Node " << GetNode()->GetId() 
+                <<" At time" << Simulator::Now().GetSeconds()
                 <<"s packet received" << packet->GetSize()
                 << "bytes from" << InetSocketAddress::ConvertFrom(from).GetIpv4());
             packet->RemoveHeader(rHeader);

@@ -131,6 +131,8 @@ namespace ns3{
                 m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
                 m_peersSockets[*i]->Connect(InetSocketAddress(*i, 8080));
             }
+            //m_peersSockets[Ipv4Address("255.255.255.255")] = Socket::CreateSocket(GetNode(), tid);
+           // m_peersSockets[]->Connect(InetSocketAddress(Ipv4Address("255.255.255.255"),8080));
         }
 
         
@@ -175,12 +177,8 @@ namespace ns3{
 
         if(msgType == 1)
         {
-            //InetSocketAddress broad = InetSocketAddress(Ipv4Address("10.1.1.2"));
-            /*
-            m_socket->Bind();
-            m_socket->Connect(m_local);
-            m_socket->Send(packet);
-            */
+            
+       
             for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
             {
                 m_peersSockets[*i]->Send(packet);
@@ -188,7 +186,7 @@ namespace ns3{
                 << *i);
             }
             
-            
+            Simulator::Cancel(m_sendEvent);
         }
         else if(msgType == 3)
         {
@@ -196,15 +194,16 @@ namespace ns3{
            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
             {
                 m_peersSockets[*i]->Send(packet);
-                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " send AUCTION_RESULT to " 
                 << *i);
             }
+        }
 
-            NS_LOG_INFO("Node " << GetNode()->GetId() << " send RESULT to "
-                << InetSocketAddress::ConvertFrom(m_local).GetIpv4());
+        if(m_sendEvent.IsExpired())
+        {
+            ScheduleNextAuction();
         }
         
-        ScheduleNextAuction();
     }
 
     void 
@@ -226,17 +225,20 @@ namespace ns3{
 
         while((packet = socket->RecvFrom(from))){
             
-            NS_LOG_INFO("At time" << Simulator::Now().GetSeconds()
-                <<"s packet received" << packet->GetSize()
-                << "bytes from" << InetSocketAddress::ConvertFrom(from).GetIpv4());
+            NS_LOG_INFO("Node " << GetNode()->GetId() 
+                << " At time " << Simulator::Now().GetSeconds()
+                <<"s packet received " << packet->GetSize()
+                << " bytes from " << InetSocketAddress::ConvertFrom(from).GetIpv4());
             packet->RemoveHeader(rHeader);
             msgType = rHeader.GetMessageType();
             m_rxTrace(packet);
             if(msgType == 2)
             {
-                //Wait and do Auction
                 NS_LOG_INFO("Receive AUC_RELPY");
-                //m_rxTrace(packet);
+                
+                double aucTime = rand()%2*0.01f;
+                Simulator::Schedule(Seconds(aucTime), &RsuApp::SendPacket, this, 3);
+                
             }
             else
             {
