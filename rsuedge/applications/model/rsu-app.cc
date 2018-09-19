@@ -74,14 +74,42 @@ namespace ns3{
     void
     RsuApp::SetSelectedEdges(int numberOfEdges)
     {
-        //choose edges randomly
+        NS_LOG_FUNCTION(this);
+
+        m_selectedEdges.clear();
+        if((int)m_receivedReply.size() < numberOfEdges)
+        {
+            m_selectedEdges = m_receivedReply;
+        }
+        else
+        {
+            NS_LOG_INFO("m_receivedReply size : " << m_receivedReply.size());
+            while((int)m_selectedEdges.size() != numberOfEdges)
+            {
+                int i = rand()%m_receivedReply.size();
+                NS_LOG_INFO("random : " << i);
+                int flag = 0;
+                for(auto it = m_selectedEdges.begin(); it != m_selectedEdges.end(); ++it)
+                {
+                    if(m_receivedReply[i] == *it)
+                    {
+                        flag = 1;
+                        break;
+                    }
+                }
+                if(flag == 0)
+                {
+                    m_selectedEdges.push_back(m_receivedReply[i]);
+                }
+            }
+        }
+        
     }
 
     void 
     RsuApp::StartApplication(void)
     {
         NS_LOG_FUNCTION(this);
-
         NS_LOG_INFO("Node " << GetNode()->GetId() <<" peers are");
         for(auto it = m_peersAddresses.begin(); it != m_peersAddresses.end(); it++)
         {
@@ -125,17 +153,18 @@ namespace ns3{
         }
         else
         {
+            m_broadcastAddress = Ipv4Address("255.255.255.255");
             for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end() ; ++i)
             {
                 NS_LOG_INFO("Node " << GetNode()->GetId() << " connect peer:" << *i);
                 m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
                 m_peersSockets[*i]->Connect(InetSocketAddress(*i, 8080));
             }
-            //m_peersSockets[Ipv4Address("255.255.255.255")] = Socket::CreateSocket(GetNode(), tid);
-           // m_peersSockets[]->Connect(InetSocketAddress(Ipv4Address("255.255.255.255"),8080));
+            m_peersSockets[m_broadcastAddress] = Socket::CreateSocket(GetNode(), tid);
+            m_peersSockets[m_broadcastAddress]->Connect(InetSocketAddress(Ipv4Address("255.255.255.255"),8080));
+            m_peersSockets[m_broadcastAddress]->SetAllowBroadcast(true);
         }
 
-        
         ScheduleNextAuction();
         
     } 
@@ -147,6 +176,7 @@ namespace ns3{
         
         if(m_sendEvent.IsRunning()){
             Simulator::Cancel(m_sendEvent);
+            Simulator::Cancel(m_waitEvent);
         }
 
         for(std::vector<Ipv4Address>::iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
@@ -170,40 +200,39 @@ namespace ns3{
         RsuHeader rHeader;
         rHeader.SetMessageType(msgType);
         packet->AddHeader(rHeader);
-        //rHeader.Print(std::cout);
-
         m_txTrace(packet);
-
 
         if(msgType == 1)
         {
-            
-       
-            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
-            {
-                m_peersSockets[*i]->Send(packet);
-                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
-                << *i);
-            }
-            
-            Simulator::Cancel(m_sendEvent);
+    
+            m_peersSockets[m_broadcastAddress]->Send(packet);
+            NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
+                << m_broadcastAddress);
+
+            m_receivedReply.clear();
+            ScheduleNextAuction();
+            ScheduleCollectReply();
         }
         else if(msgType == 3)
         {
-            
-           for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
+            if(m_receivedReply.size() != 0)
             {
-                m_peersSockets[*i]->Send(packet);
-                NS_LOG_INFO("Node " << GetNode()->GetId() << " send AUCTION_RESULT to " 
-                << *i);
+                SetSelectedEdges(2);
+                for(std::vector<Ipv4Address>::const_iterator i = m_selectedEdges.begin(); i != m_selectedEdges.end(); ++i)
+                {
+                    m_peersSockets[*i]->Send(packet);
+                    NS_LOG_INFO("Node " << GetNode()->GetId() 
+                        << " send AUCTION_RESULT to " << *i);
+                }
             }
+            else
+            {
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " didn't receive REPLY");
+            }
+            
         }
 
-        if(m_sendEvent.IsExpired())
-        {
-            ScheduleNextAuction();
-        }
-        
+    
     }
 
     void 
@@ -212,6 +241,13 @@ namespace ns3{
         NS_LOG_FUNCTION(this);
         Time tNext (Seconds(2.5));
         m_sendEvent = Simulator::Schedule(tNext, &RsuApp::SendPacket, this, 1);
+    }
+    void 
+    RsuApp::ScheduleCollectReply (void)
+    {
+        NS_LOG_FUNCTION(this);
+        Time tWait(Seconds(1.0));
+        m_waitEvent = Simulator::Schedule(tWait, &RsuApp::SendPacket, this, 3);
     }
 
     void 
@@ -234,17 +270,11 @@ namespace ns3{
             m_rxTrace(packet);
             if(msgType == 2)
             {
-                NS_LOG_INFO("Receive AUC_RELPY");
-                
-                double aucTime = rand()%2*0.01f;
-                Simulator::Schedule(Seconds(aucTime), &RsuApp::SendPacket, this, 3);
+                NS_LOG_INFO("Node " << GetNode()->GetId() 
+                    << " : Receive AUC_RELPY" );
+                m_receivedReply.push_back(InetSocketAddress::ConvertFrom(from).GetIpv4());
                 
             }
-            else
-            {
-                //remove packet
-            }
-
         }
 
     }

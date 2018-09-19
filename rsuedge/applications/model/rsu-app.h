@@ -21,6 +21,7 @@ namespace ns3{
             std::vector<Ipv4Address> GetSelectedEdges(void) const;
             void SetPeersAddresses(const std::vector<Ipv4Address> &peers);
             void SetSelectedEdges(int numberOfEdges);
+            void Auction(const std::vector<Ipv4Address> &receivedReply);
 
         private:
             virtual void StartApplication (void);
@@ -28,24 +29,27 @@ namespace ns3{
 
             void SendPacket (uint64_t msgType);
             void ScheduleNextAuction (void);
+            void ScheduleCollectReply (void);
             void HandleRead (Ptr<Socket> socket);
             void HandleAccept (Ptr<Socket> socket, const Address& from);
             void HandlePeerClose (Ptr<Socket> socket);
             void HandlePeerError (Ptr<Socket> socket);
-            //void Auction(void);
 
             bool                                m_mode;        //Tx: true, Rx: false
             int                                 m_numberOfPeers;
             int                                 m_numberOfEdges;
             std::vector<Ipv4Address>            m_peersAddresses;
             std::vector<Ipv4Address>            m_selectedEdges;
+            std::vector<Ipv4Address>            m_receivedReply;
             std::map<Ipv4Address, Ptr<Socket>>  m_peersSockets;
+            Ipv4Address                         m_broadcastAddress;
             Address                             m_local;
             DataRate                            m_dataRate;
             Ptr<Socket>                         m_socket;
             uint32_t                            m_packetSize;
             uint32_t                            m_packetsSent;
             EventId                             m_sendEvent;
+            EventId                             m_waitEvent;
             
 
             TracedCallback<Ptr<const Packet>> m_txTrace;

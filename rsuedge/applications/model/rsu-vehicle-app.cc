@@ -178,7 +178,7 @@ namespace ns3{
         while((packet = socket->RecvFrom(from))){
             
             NS_LOG_INFO("Node " << GetNode()->GetId() 
-                <<" At time" << Simulator::Now().GetSeconds()
+                <<" At time " << Simulator::Now().GetSeconds()
                 <<"s packet received" << packet->GetSize()
                 << "bytes from" << InetSocketAddress::ConvertFrom(from).GetIpv4());
             packet->RemoveHeader(rHeader);
