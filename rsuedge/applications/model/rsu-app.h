@@ -21,7 +21,6 @@ namespace ns3{
             std::vector<Ipv4Address> GetSelectedEdges(void) const;
             void SetPeersAddresses(const std::vector<Ipv4Address> &peers);
             void SetSelectedEdges(int numberOfEdges);
-            void Auction(const std::vector<Ipv4Address> &receivedReply);
 
         private:
             virtual void StartApplication (void);

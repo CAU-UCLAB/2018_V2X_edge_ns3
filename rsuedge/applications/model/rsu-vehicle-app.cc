@@ -2,6 +2,7 @@
 #include "rsu-vehicle-app.h"
 #include "ns3/rsu-header.h"
 #include "ns3/udp-socket.h"
+#include "ns3/random-variable-stream.h"
 
 namespace ns3{
 
@@ -142,12 +143,7 @@ namespace ns3{
         
         if(msgType == 2)
         {
-            //InetSocketAddress broad = InetSocketAddress(Ipv4Address("10.1.1.2"));
-            /*
-            m_socket->Bind();
-            m_socket->Connect(m_local);
-            m_socket->Send(packet);
-            */
+            
             for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
             {
                 m_peersSockets[*i]->Send(packet);
@@ -188,12 +184,17 @@ namespace ns3{
             {
                 //receive AUC_REQUEST
                 NS_LOG_INFO("Receive AUC_REQUSET");
-                
-                if(m_mode == true)
+                Ptr<UniformRandomVariable> rv = CreateObject<UniformRandomVariable> ();
+                uint32_t selectEdge = rv->GetInteger(1, 10);
+
+                if(selectEdge > 6)
                 {
-                    //Choose to bid
-                    double bidTime = rand()%2*0.01f;
-                    Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
+                    if(m_mode == true)
+                    {
+                        //Choose to bid
+                        double bidTime = rand()%2*0.01f;
+                        Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
+                    }
                 }
 
             }
@@ -205,11 +206,6 @@ namespace ns3{
                 m_mode = false;
 
             }
-            else
-            {
-                //remove packet
-            }
-
         }
     }
 

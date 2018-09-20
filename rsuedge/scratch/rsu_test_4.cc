@@ -22,7 +22,8 @@ NS_LOG_COMPONENT_DEFINE("RsuTest_v4");
 int main (int argc, char *argv[])
 {
     
-    uint32_t N = 5;
+    uint32_t numberOfVehicle = 20;
+    //uint32_t numberOfRsu = 1;
     
     //1. Create RSU and Vehicles
     
@@ -30,7 +31,7 @@ int main (int argc, char *argv[])
     NodeContainer rsuNodes;
     NodeContainer vehicleNodes;
     rsuNodes.Create(1);
-    vehicleNodes.Create(N);
+    vehicleNodes.Create(numberOfVehicle);
 
     NodeContainer allNodes = NodeContainer(rsuNodes, vehicleNodes);
 
@@ -65,13 +66,13 @@ int main (int argc, char *argv[])
 
     Ipv4AddressHelper ipv4;
     ipv4.SetBase("10.1.1.0", "255.255.255.0");
-    std::vector<Ipv4Address> peerAddress(N);
+    std::vector<Ipv4Address> peerAddress(numberOfVehicle);
     std::vector<Ipv4Address> rsuAddress;
     peerAddress.clear();
     rsuAddress.clear();
     Ipv4InterfaceContainer rsuInterface = ipv4.Assign(rsuDevice);
     Ipv4InterfaceContainer vehicleInterface = ipv4.Assign(vehicleDevice);
-    for(uint32_t i = 0; i < N ; ++i)
+    for(uint32_t i = 0; i < numberOfVehicle ; ++i)
     {
         NS_LOG_INFO("Add IP (" << vehicleInterface.GetAddress(i) << ") address to vector");
         peerAddress.push_back(vehicleInterface.GetAddress(i));
@@ -81,18 +82,16 @@ int main (int argc, char *argv[])
 
     // 7. Locate nodes
     MobilityHelper mobility;
+    
     Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator>();
-
-    positionAlloc->Add(Vector(0,0,0));
-    positionAlloc->Add(Vector(1,0,0));
-    positionAlloc->Add(Vector(1,1,0));
+    for(uint32_t i = 0 ; i < allNodes.GetN(); ++i)
+    {
+        positionAlloc->Add(Vector(i,0,0));
+    }
     mobility.SetPositionAllocator(positionAlloc);
-
+    
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-
     mobility.Install(allNodes);
-    //mobility.Install(vehicleNodes);
-
 
     // 8. Create Rsu application.
     NS_LOG_INFO("Create RSU Application");
@@ -108,7 +107,6 @@ int main (int argc, char *argv[])
 
     // 9. Create Vehicle application.
     NS_LOG_INFO("Create Vehicle Application");
-    //Address rsuAddress(InetSocketAddress (Ipv4Address::GetAny(), port));
     RsuVehicleHelper rsuVehi(true, localAddress);
     rsuVehi.SetPeersAddresses(rsuAddress);
     rsuVehi.SetAttribute("DataRate", DataRateValue(DataRate("5Mb/s")));
@@ -120,9 +118,16 @@ int main (int argc, char *argv[])
     
     AnimationInterface anim("rsu_test_v4.xml");
     anim.SetMaxPktsPerTraceFile(1000000);
-    anim.SetConstantPosition(rsuNodes.Get(0), 10, 5);
-    anim.SetConstantPosition(vehicleNodes.Get(0), 10, 10);
-    anim.SetConstantPosition(vehicleNodes.Get(1), 5, 10);
+    anim.SetConstantPosition(rsuNodes.Get(0), 5, 5);
+    
+    for(uint32_t i = 0; i < vehicleNodes.GetN() ; ++i)
+    {
+        float x = (rand()%1100)*0.01f;
+        float y = (rand()%1100)*0.01f;
+        //anim.SetConstantPosition(vehicleNodes.Get(i), 0+0.5*i, 10);
+        anim.SetConstantPosition(vehicleNodes.Get(i), x, y);
+    }
+    
     
     //p2p.EnablePcapAll("rsu_test_3_packet", false);
     phy.EnablePcap ("rsu_test_4_rsuDevice", rsuDevice);

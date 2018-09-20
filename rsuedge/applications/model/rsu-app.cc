@@ -76,6 +76,7 @@ namespace ns3{
     {
         NS_LOG_FUNCTION(this);
 
+        srand((unsigned int)time(NULL));
         m_selectedEdges.clear();
         if((int)m_receivedReply.size() < numberOfEdges)
         {
@@ -270,10 +271,16 @@ namespace ns3{
             m_rxTrace(packet);
             if(msgType == 2)
             {
-                NS_LOG_INFO("Node " << GetNode()->GetId() 
-                    << " : Receive AUC_RELPY" );
-                m_receivedReply.push_back(InetSocketAddress::ConvertFrom(from).GetIpv4());
+                if(m_waitEvent.IsExpired())
+                {
+                    NS_LOG_INFO("Node " << GetNode()->GetId() << " : Collecting Reply is expired " );
+                }
+                else
+                {
+                    NS_LOG_INFO("Node " << GetNode()->GetId() << " : Receive AUC_RELPY" );
+                    m_receivedReply.push_back(InetSocketAddress::ConvertFrom(from).GetIpv4());
                 
+                }
             }
         }
 
