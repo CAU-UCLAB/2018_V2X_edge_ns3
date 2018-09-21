@@ -184,6 +184,12 @@ namespace ns3{
             {
                 //receive AUC_REQUEST
                 NS_LOG_INFO("Receive AUC_REQUSET");
+                double bidTime = rand()%2*0.01f;
+                Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
+
+                /* 
+                 * Version 2: Random bidding
+                 * 
                 Ptr<UniformRandomVariable> rv = CreateObject<UniformRandomVariable> ();
                 uint32_t selectEdge = rv->GetInteger(1, 10);
 
@@ -196,7 +202,8 @@ namespace ns3{
                         Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
                     }
                 }
-
+                */
+                
             }
             else if(msgType == 3)
             {

@@ -22,7 +22,7 @@ NS_LOG_COMPONENT_DEFINE("RsuTest_v4");
 int main (int argc, char *argv[])
 {
     
-    uint32_t numberOfVehicle = 20;
+    uint32_t numberOfVehicle = 10;
     //uint32_t numberOfRsu = 1;
     
     //1. Create RSU and Vehicles
