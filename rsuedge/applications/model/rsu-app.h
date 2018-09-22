@@ -21,14 +21,15 @@ namespace ns3{
             std::vector<Ipv4Address> GetSelectedEdges(void) const;
             void SetPeersAddresses(const std::vector<Ipv4Address> &peers);
             void SetSelectedEdges(int numberOfEdges);
+            void AuctionLatency(void);
 
         private:
             virtual void StartApplication (void);
             virtual void StopApplication (void);
 
             void SendPacket (uint64_t msgType);
+            void CompleteCollect (Address from);
             void ScheduleNextAuction (void);
-            void ScheduleCollectReply (void);
             void HandleRead (Ptr<Socket> socket);
             void HandleAccept (Ptr<Socket> socket, const Address& from);
             void HandlePeerClose (Ptr<Socket> socket);
@@ -37,6 +38,8 @@ namespace ns3{
             bool                                m_mode;        //Tx: true, Rx: false
             int                                 m_numberOfPeers;
             int                                 m_numberOfEdges;
+            double                              requestTime;
+            double                              resultTime;
             std::vector<Ipv4Address>            m_peersAddresses;
             std::vector<Ipv4Address>            m_selectedEdges;
             std::vector<Ipv4Address>            m_receivedReply;

@@ -106,6 +106,12 @@ namespace ns3{
         }
         
     }
+    void
+    RsuApp::AuctionLatency(void)
+    {
+        NS_LOG_FUNCTION(this);
+        NS_LOG_UNCOND("1\t" << (Simulator::Now().GetSeconds())-requestTime);
+    }
 
     void 
     RsuApp::StartApplication(void)
@@ -177,7 +183,7 @@ namespace ns3{
         
         if(m_sendEvent.IsRunning()){
             Simulator::Cancel(m_sendEvent);
-            Simulator::Cancel(m_waitEvent);
+            //Simulator::Cancel(m_waitEvent);
         }
 
         for(std::vector<Ipv4Address>::iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end(); ++i)
@@ -190,7 +196,6 @@ namespace ns3{
             m_socket->Close();
             m_socket->SetRecvCallback(MakeNullCallback<void, Ptr<Socket>>());
         }
-
     }
 
     void 
@@ -209,10 +214,10 @@ namespace ns3{
             m_peersSockets[m_broadcastAddress]->Send(packet);
             NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
                 << m_broadcastAddress);
-
+            requestTime = Simulator::Now().GetSeconds();
             m_receivedReply.clear();
             ScheduleNextAuction();
-            ScheduleCollectReply();
+
         }
         else if(msgType == 3)
         {
@@ -225,15 +230,28 @@ namespace ns3{
                     NS_LOG_INFO("Node " << GetNode()->GetId() 
                         << " send AUCTION_RESULT to " << *i);
                 }
+                AuctionLatency();
             }
             else
             {
                 NS_LOG_INFO("Node " << GetNode()->GetId() << " didn't receive REPLY");
             }
-            
         }
+    }
 
-    
+    void 
+    RsuApp::CompleteCollect (Address from)
+    {
+        NS_LOG_FUNCTION(this);
+        
+        m_receivedReply.push_back(InetSocketAddress::ConvertFrom(from).GetIpv4());
+
+        if ((int)m_receivedReply.size() == m_numberOfPeers )
+        {
+            Time tNext (Seconds(0.001));
+            Simulator::Schedule(tNext, &RsuApp::SendPacket, this, 3);
+        }
+       
     }
 
     void 
@@ -243,14 +261,7 @@ namespace ns3{
         Time tNext (Seconds(2.5));
         m_sendEvent = Simulator::Schedule(tNext, &RsuApp::SendPacket, this, 1);
     }
-    void 
-    RsuApp::ScheduleCollectReply (void)
-    {
-        NS_LOG_FUNCTION(this);
-        Time tWait(Seconds(1.0));
-        m_waitEvent = Simulator::Schedule(tWait, &RsuApp::SendPacket, this, 3);
-    }
-
+    
     void 
     RsuApp::HandleRead (Ptr<Socket> socket)
     {
@@ -269,18 +280,11 @@ namespace ns3{
             packet->RemoveHeader(rHeader);
             msgType = rHeader.GetMessageType();
             m_rxTrace(packet);
+
             if(msgType == 2)
             {
-                if(m_waitEvent.IsExpired())
-                {
-                    NS_LOG_INFO("Node " << GetNode()->GetId() << " : Collecting Reply is expired " );
-                }
-                else
-                {
-                    NS_LOG_INFO("Node " << GetNode()->GetId() << " : Receive AUC_RELPY" );
-                    m_receivedReply.push_back(InetSocketAddress::ConvertFrom(from).GetIpv4());
-                
-                }
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " : Receive AUC_RELPY" );
+                CompleteCollect(from);
             }
         }
 

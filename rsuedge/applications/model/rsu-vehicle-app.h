@@ -25,7 +25,7 @@ namespace ns3{
             virtual void StopAllication (void);
 
             void SendPacket (uint64_t msgType);
-            void ScheduleTx (void);
+            void ScheduleEdge (void);
             void HandleRead (Ptr<Socket> socket);
             void HandleAccept (Ptr<Socket> socket, const Address& from);
             void HandlePeerClose (Ptr<Socket> socket);

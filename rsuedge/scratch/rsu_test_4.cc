@@ -24,6 +24,10 @@ int main (int argc, char *argv[])
     
     uint32_t numberOfVehicle = 10;
     //uint32_t numberOfRsu = 1;
+
+    CommandLine cmd;
+    cmd.AddValue("numberOfVehicle","an int argument", numberOfVehicle);
+    cmd.Parse(argc, argv);
     
     //1. Create RSU and Vehicles
     

@@ -157,9 +157,11 @@ namespace ns3{
     }
 
     void
-    RsuVehicleApp::ScheduleTx(void)
+    RsuVehicleApp::ScheduleEdge(void)
     {
-        //
+        NS_LOG_FUNCTION(this);
+        NS_LOG_INFO("Node " << GetNode()->GetId() << " stop edge computing.");
+        m_mode = true;
     }
 
     void
@@ -184,9 +186,12 @@ namespace ns3{
             {
                 //receive AUC_REQUEST
                 NS_LOG_INFO("Receive AUC_REQUSET");
-                double bidTime = rand()%2*0.01f;
-                Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
-
+                if(m_mode == true)
+                {
+                    double bidTime = rand()%2*0.01f;
+                    Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
+                }
+                
                 /* 
                  * Version 2: Random bidding
                  * 
@@ -208,10 +213,14 @@ namespace ns3{
             else if(msgType == 3)
             {
                 //receive AUC_RESULT
-                NS_LOG_INFO("Receive AUC_RESULT");
-                //m_rxTrace(packet);
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " receive AUC_RESULT");
+                
+                // Version 2. control edge computing time
+                /*
+                double edgeTime = rand()%4*0.01f+2;
                 m_mode = false;
-
+                Simulator::Schedule(Seconds(edgeTime), &RsuVehicleApp::ScheduleEdge, this);
+                */
             }
         }
     }
