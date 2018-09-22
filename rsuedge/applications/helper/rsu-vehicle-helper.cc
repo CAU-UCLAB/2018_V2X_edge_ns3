@@ -3,6 +3,7 @@
 
 namespace ns3 {
 
+    NS_LOG_COMPONENT_DEFINE("RsuVehicleAppHelper");
     RsuVehicleHelper::RsuVehicleHelper (bool mode, Address local)
     {
         m_factory.SetTypeId("ns3::RsuVehicleApp");
@@ -15,6 +16,12 @@ namespace ns3 {
     RsuVehicleHelper::SetAttribute (std::string name, const AttributeValue &value)
     {
         m_factory.Set(name, value);
+    }
+    void 
+    RsuVehicleHelper::SetPeersAddresses(std::vector<Ipv4Address> &peersAddresses)
+    {
+        NS_LOG_INFO("peer size:" << peersAddresses.size());
+        m_peersAddresses = peersAddresses;
     }
 
     ApplicationContainer
@@ -44,7 +51,8 @@ namespace ns3 {
     Ptr<Application>
     RsuVehicleHelper::InstallPriv (Ptr<Node> node) const
     {
-        Ptr<Application> app = m_factory.Create<Application>();
+        Ptr<RsuVehicleApp> app = m_factory.Create<RsuVehicleApp>();
+        app->SetPeersAddresses(m_peersAddresses);
         node->AddApplication(app);
         return app;
     }
