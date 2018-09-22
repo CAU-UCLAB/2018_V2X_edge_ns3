@@ -20,6 +20,7 @@ namespace ns3{
             std::vector<Ipv4Address> GetPeersAdresses(void) const;
             std::vector<Ipv4Address> GetSelectedEdges(void) const;
             void SetPeersAddresses(const std::vector<Ipv4Address> &peers);
+            void SetNumberOfEdges(int edges);
             void SetSelectedEdges(int numberOfEdges);
             void AuctionLatency(void);
 

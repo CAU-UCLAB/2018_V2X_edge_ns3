@@ -23,10 +23,12 @@ int main (int argc, char *argv[])
 {
     
     uint32_t numberOfVehicle = 10;
+    uint32_t numberOfEdges = 1;
     //uint32_t numberOfRsu = 1;
 
     CommandLine cmd;
     cmd.AddValue("numberOfVehicle","an int argument", numberOfVehicle);
+    cmd.AddValue("numberOfEdges","an int argument", numberOfEdges);
     cmd.Parse(argc, argv);
     
     //1. Create RSU and Vehicles
@@ -103,6 +105,7 @@ int main (int argc, char *argv[])
     Address localAddress(InetSocketAddress (Ipv4Address::GetAny(), port));
     RsuAppHelper rsu_1(true, localAddress);
     rsu_1.SetPeersAddresses(peerAddress);
+    rsu_1.SetNumberOfEdges(numberOfEdges);
     rsu_1.SetAttribute("DataRate", DataRateValue(DataRate("5Mb/s")));
     ApplicationContainer rsuApp = rsu_1.Install(rsuNodes);
     

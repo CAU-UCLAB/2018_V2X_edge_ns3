@@ -22,6 +22,11 @@ namespace ns3 {
         NS_LOG_INFO("peer size:" << peersAddresses.size());
         m_peersAddresses = peersAddresses;
     }
+    void
+    RsuAppHelper::SetNumberOfEdges(int edges)
+    {
+        m_numberOfEdges = edges;
+    }
 
     ApplicationContainer
     RsuAppHelper::Install (Ptr<Node> node) const
@@ -52,6 +57,7 @@ namespace ns3 {
     {
         Ptr<RsuApp> app = m_factory.Create<RsuApp>();
         app->SetPeersAddresses(m_peersAddresses);
+        app->SetNumberOfEdges(m_numberOfEdges);
         node->AddApplication(app);
         return app;
     }

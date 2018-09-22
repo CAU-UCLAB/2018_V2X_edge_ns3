@@ -18,6 +18,7 @@ namespace ns3{
             RsuAppHelper(bool mode, Address local);
             void SetAttribute(std:: string name, const AttributeValue &value);
             void SetPeersAddresses(std::vector<Ipv4Address> &peersAddresses);
+            void SetNumberOfEdges(int edges);
             ApplicationContainer Install (Ptr<Node> node) const;
             ApplicationContainer Install (std::string nodeName) const;
             ApplicationContainer Install (NodeContainer c) const;
@@ -26,6 +27,7 @@ namespace ns3{
             Ptr<Application> InstallPriv (Ptr<Node> node) const;
             ObjectFactory                       m_factory;
             std::vector<Ipv4Address>            m_peersAddresses;
+            int                                 m_numberOfEdges;
 
     };
 

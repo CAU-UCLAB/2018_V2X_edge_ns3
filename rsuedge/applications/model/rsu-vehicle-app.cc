@@ -188,7 +188,7 @@ namespace ns3{
                 NS_LOG_INFO("Receive AUC_REQUSET");
                 if(m_mode == true)
                 {
-                    double bidTime = rand()%2*0.01f;
+                    double bidTime = rand()%3*0.01f;
                     Simulator::Schedule(Seconds(bidTime), &RsuVehicleApp::SendPacket, this, 2);
                 }
                 

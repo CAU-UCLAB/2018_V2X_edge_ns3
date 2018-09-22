@@ -72,6 +72,12 @@ namespace ns3{
     }
 
     void
+    RsuApp::SetNumberOfEdges(int edges)
+    {
+        m_numberOfEdges = edges;
+    }
+
+    void
     RsuApp::SetSelectedEdges(int numberOfEdges)
     {
         NS_LOG_FUNCTION(this);
@@ -106,6 +112,7 @@ namespace ns3{
         }
         
     }
+
     void
     RsuApp::AuctionLatency(void)
     {
@@ -216,14 +223,13 @@ namespace ns3{
                 << m_broadcastAddress);
             requestTime = Simulator::Now().GetSeconds();
             m_receivedReply.clear();
-            ScheduleNextAuction();
 
         }
         else if(msgType == 3)
         {
             if(m_receivedReply.size() != 0)
             {
-                SetSelectedEdges(2);
+                SetSelectedEdges(m_numberOfEdges);
                 for(std::vector<Ipv4Address>::const_iterator i = m_selectedEdges.begin(); i != m_selectedEdges.end(); ++i)
                 {
                     m_peersSockets[*i]->Send(packet);
@@ -231,6 +237,7 @@ namespace ns3{
                         << " send AUCTION_RESULT to " << *i);
                 }
                 AuctionLatency();
+                ScheduleNextAuction();
             }
             else
             {
