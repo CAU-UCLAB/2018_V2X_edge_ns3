@@ -33,6 +33,7 @@ namespace ns3{
 
             bool        m_mode;         //Normal : True, Edge : False
             Address     m_local;
+            TypeId      m_tid;
             DataRate    m_dataRate;
             Ptr<Socket> m_socket;
             uint32_t    m_packetSize;
@@ -41,6 +42,7 @@ namespace ns3{
             int                                 m_numberOfPeers;
             std::vector<Ipv4Address>            m_peersAddresses;
             std::map<Ipv4Address, Ptr<Socket>>  m_peersSockets;
+            std::map<Ipv4Address, Ptr<Socket>>   m_peersUDPSockets;
 
             TracedCallback<Ptr<const Packet>> m_txTrace;
             TracedCallback<Ptr<const Packet>> m_rxTrace;

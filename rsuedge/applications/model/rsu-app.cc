@@ -2,6 +2,10 @@
 #include "rsu-app.h"
 #include "ns3/rsu-header.h"
 #include "ns3/udp-socket.h"
+#include "ns3/tcp-socket-factory.h"
+#include "ns3/udp-socket-factory.h"
+#include "ns3/config.h"
+
 
 namespace ns3{
 
@@ -19,6 +23,11 @@ namespace ns3{
                 AddressValue(),
                 MakeAddressAccessor(&RsuApp::m_local),
                 MakeAddressChecker())
+            .AddAttribute("Protocol",
+                "The type id of the protocol to use for the rx socket",
+                TypeIdValue(TcpSocketFactory::GetTypeId()),
+                MakeTypeIdAccessor(&RsuApp::m_tid),
+                MakeTypeIdChecker())
             .AddAttribute("DataRate", "The data rate",
                 DataRateValue(DataRate("500kb/s")),
                 MakeDataRateAccessor(&RsuApp::m_dataRate),
@@ -130,7 +139,9 @@ namespace ns3{
             NS_LOG_INFO("\t" << *it);
         }
        
-        TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+        //TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+        TypeId tid = m_tid;
+
         if(!m_socket)
         {   
             NS_LOG_INFO("Node " << GetNode()->GetId() << " Create Socket");
@@ -139,6 +150,8 @@ namespace ns3{
             m_socket->Bind(m_local);
             m_socket->Listen();
             m_socket->ShutdownSend();
+            
+            /*
             if(addressUtils::IsMulticast(m_local))
             {
                 Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (m_socket);
@@ -151,6 +164,8 @@ namespace ns3{
                     NS_FATAL_ERROR("Error: joining multicast on a non-UDP socket");
                 }
             }
+            */
+            
         }
         
         m_socket->SetRecvCallback(MakeCallback(&RsuApp::HandleRead, this));
@@ -161,6 +176,10 @@ namespace ns3{
             MakeCallback (&RsuApp::HandlePeerClose, this),
             MakeCallback (&RsuApp::HandlePeerError, this));
 
+        Config::SetDefault("ns3::TcpSocket::SegmentSize", UintegerValue(1460));
+        Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(900000));
+        Config::SetDefault("ns3::TcpSocket::SndBufSize" , UintegerValue(900000));
+
         if(m_peersAddresses.size() == 0)
         {
             NS_LOG_INFO("No peer");
@@ -170,13 +189,16 @@ namespace ns3{
             m_broadcastAddress = Ipv4Address("255.255.255.255");
             for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end() ; ++i)
             {
+                
                 NS_LOG_INFO("Node " << GetNode()->GetId() << " connect peer:" << *i);
-                m_peersSockets[*i] = Socket::CreateSocket(GetNode(), tid);
+                m_peersSockets[*i] = Socket::CreateSocket(GetNode(), TcpSocketFactory::GetTypeId());
                 m_peersSockets[*i]->Connect(InetSocketAddress(*i, 8080));
+                //m_peersUDPSockets[*i] = Socket::CreateSocket(GetNode(), UdpSocketFactory::GetTypeId());
+                //m_peersUDPSockets[*i]->Connect(InetSocketAddress(*i, 8070));
             }
-            m_peersSockets[m_broadcastAddress] = Socket::CreateSocket(GetNode(), tid);
-            m_peersSockets[m_broadcastAddress]->Connect(InetSocketAddress(Ipv4Address("255.255.255.255"),8080));
-            m_peersSockets[m_broadcastAddress]->SetAllowBroadcast(true);
+            //m_peersSockets[m_broadcastAddress] = Socket::CreateSocket(GetNode(), UdpSocketFactory::GetTypeId());
+            //m_peersSockets[m_broadcastAddress]->Connect(InetSocketAddress(Ipv4Address("255.255.255.255"),8070));
+            //m_peersSockets[m_broadcastAddress]->SetAllowBroadcast(true);
         }
 
         ScheduleNextAuction();
@@ -217,12 +239,21 @@ namespace ns3{
 
         if(msgType == 1)
         {
-    
+            /*
             m_peersSockets[m_broadcastAddress]->Send(packet);
             NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " 
                 << m_broadcastAddress);
             requestTime = Simulator::Now().GetSeconds();
             m_receivedReply.clear();
+            */
+            m_receivedReply.clear();
+            for(std::vector<Ipv4Address>::const_iterator i = m_peersAddresses.begin(); i != m_peersAddresses.end() ; ++i)
+            {
+                m_peersSockets[*i]->Send(packet);
+                NS_LOG_INFO("Node " << GetNode()->GetId() << " send REQUEST to " << *i);
+            }
+            requestTime = Simulator::Now().GetSeconds();
+            
 
         }
         else if(msgType == 3)
@@ -265,7 +296,7 @@ namespace ns3{
     RsuApp::ScheduleNextAuction(void)
     {
         NS_LOG_FUNCTION(this);
-        Time tNext (Seconds(2.5));
+        Time tNext (Seconds(10));
         m_sendEvent = Simulator::Schedule(tNext, &RsuApp::SendPacket, this, 1);
     }
     

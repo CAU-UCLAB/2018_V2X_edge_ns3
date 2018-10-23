@@ -45,8 +45,10 @@ namespace ns3{
             std::vector<Ipv4Address>            m_selectedEdges;
             std::vector<Ipv4Address>            m_receivedReply;
             std::map<Ipv4Address, Ptr<Socket>>  m_peersSockets;
+            std::map<Ipv4Address, Ptr<Socket>>  m_peersUDPSockets;
             Ipv4Address                         m_broadcastAddress;
             Address                             m_local;
+            TypeId                              m_tid;
             DataRate                            m_dataRate;
             Ptr<Socket>                         m_socket;
             uint32_t                            m_packetSize;

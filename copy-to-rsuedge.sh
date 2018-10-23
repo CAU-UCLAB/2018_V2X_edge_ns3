@@ -1,9 +1,9 @@
 NS3_APP_FOLDER=~/workspace/ns-3-allinone/ns-3.28/src/applications
 NS3_INT_FOLDER=~/workspace/ns-3-allinone/ns-3.28/src/internet
 NS3_FOLDER=~/workspace/ns-3-allinone/ns-3.28
-PROJECT_APP_FOLDER=~/workspace/project_ns3/rsuedge/applications
-PROJECT_INT_FOLDER=~/workspace/project_ns3/rsuedge/internet
-PROJECT_FOLDER=~/workspace/project_ns3/rsuedge
+PROJECT_APP_FOLDER=~/workspace/project_ns3/2018_V2X_edge_ns3/rsuedge/applications
+PROJECT_INT_FOLDER=~/workspace/project_ns3/2018_V2X_edge_ns3/rsuedge/internet
+PROJECT_FOLDER=~/workspace/project_ns3/2018_V2X_edge_ns3/rsuedge
 
 cp $NS3_APP_FOLDER/model/rsu-app.h $PROJECT_APP_FOLDER/model/
 cp $NS3_APP_FOLDER/model/rsu-app.cc $PROJECT_APP_FOLDER/model/
